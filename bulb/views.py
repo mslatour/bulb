@@ -25,7 +25,7 @@ def n4j2bulb(r):
 class IdeaAPIView(APIView):
   
   def get(self, request, ideaId=0, format=None):
-    query = "start x=node({ideaId}) return x.title as title, ID(x) as id"
+    query = "start x=node({ideaId}) return ID(x) as id, x.title as title"
     params = {"ideaId": int(ideaId)}
     headers = {'content-type': 'application/json'}
 
@@ -47,7 +47,7 @@ class IdeaAPIView(APIView):
 
 class IdeaCollectionAPIView(APIView):
   def get(self, request, format=None):
-    query = "start x=node(*) where ID(x) <> 0 return x.title as title, ID(x) as id"
+    query = "start x=node(*) where ID(x) <> 0 return ID(x) as id, x.title as title"
     headers = {'content-type': 'application/json'}
 
     r = requests.post(N4J, data=json.dumps({"query": query}), headers=headers)
@@ -55,31 +55,31 @@ class IdeaCollectionAPIView(APIView):
     return Response(n4j2bulb(r))
 
   def post(self, request, format=None):
-    query = "create (n {title: {title}}) return ID(n);"
+    query = "create (n {title: {title}}) return ID(n) as id;"
     params = {"title": request.DATA['title']}
 
     headers = {'content-type': 'application/json'}
 
     r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
 
-    return Response(r.json())
+    return Response(n4j2bulb(r))
 
 class NeighbourAPIView(APIView):
   def get(self, request, ideaId=None, format=None):
     if ideaId:
-      query = "start n=node({ideaId}) match n-[:IS_RELATED_TO]-m return m;"
+      query = "start n=node({ideaId}) match n-[:IS_RELATED_TO]-m return ID(m) as id, m.title as title;"
       params = {"ideaId": int(ideaId)}
 
       headers = {'content-type': 'application/json'}
 
       r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
 
-      return Response(r.json())
+      return Response(n4j2bulb(r))
 
   def post(self, request, ideaId=None, format=None):
     if ideaId:
       query = "start node1=node({ideaId}), node2=node({neighbourId}) create node1-[:IS_RELATED_TO]->node2;"
-      params = {"ideaId": int(ideaId), "neighbourId": request.DATA['neighbour']}
+      params = {"ideaId": int(ideaId), "neighbourId": int(request.DATA['neighbour'])}
 
       headers = {'content-type': 'application/json'}
 
