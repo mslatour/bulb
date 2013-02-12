@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.shortcuts import render
 import requests, json
 
 N4J = "http://localhost:7474/db/data/cypher"
@@ -86,3 +87,6 @@ class NeighbourAPIView(APIView):
 
       return Response(r.json())
 
+
+def interface(request):
+    return render(request, 'index.html')

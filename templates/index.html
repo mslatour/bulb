@@ -1,0 +1,28 @@
+{% load staticfiles %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <title>Project Bulb - interface</title>
+        <!-- JQuery -->
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <!-- Underscore -->
+        <script src="{% static 'js/underscore.js' %}"></script>
+        <!-- Backbone -->
+        <script src="{% static 'js/backbone.js' %}"></script>
+        <!-- Main script -->
+        <script src="{% static 'js/all.js' %}"></script>
+    </head>
+    <body>
+    <div id="app">
+    <table>
+    </table>
+    <form method="post" id="ideaForm">
+<input type="text" id="id_title" /><input type="submit" value="Save" />
+    </form>
+    </div>
+    <script id="ideaRowTpl" type="text/template">
+<td><%= id %></td><td><%= title %></td>
+    </script>
+    </body>
+</html>

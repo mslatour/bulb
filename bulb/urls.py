@@ -8,7 +8,8 @@ from bulb.views import *
 urlpatterns = patterns('bulb.views',
   url(r'^idea/(?P<ideaId>\d+)/$', IdeaAPIView.as_view(), name='IdeaAPIView'),
   url(r'^idea/(?P<ideaId>\d+)/neighbours/$', NeighbourAPIView.as_view(), name='NeighbourAPIView'),
-  url(r'^idea/$', IdeaCollectionAPIView.as_view(), name='idea')
+  url(r'^idea/$', IdeaCollectionAPIView.as_view(), name='idea'),
+  url(r'^$', interface, name='interface'),
   # Examples:
   # url(r'^$', 'bulb.views.home', name='home'),
   # url(r'^bulb/', include('bulb.foo.urls')),
