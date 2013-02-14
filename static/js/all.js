@@ -8,6 +8,17 @@ $(function() {
             };
         },
 
+        // add trailing slash to request url
+        // necessary for Django as Backbone does not add trailing slash
+        url: function() {
+            var origUrl = Backbone.Model.prototype.url.call(this);
+            return origUrl += origUrl.endsWith('/') ? '' : '/';
+        },
+
+
+        remove: function() {
+            this.destroy();
+        },
 
         initialize: function() {
             if (!this.get("title")) {
@@ -22,10 +33,30 @@ $(function() {
 
         template: _.template($('script#ideaRowTpl').html()),
 
+        events: {
+            "click button#id_delete": "remove",
+            "click .verify button.yes": "removeVerifyTrue",
+            "click .verify button.no": "removeVerifyFalse"
+        },
+
         remove: function(event) {
             event.stopImmediatePropagation();
             event.preventDefault();
+
+            // replace button with verification stage buttons
+            $(this.el).find('#id_delete').replaceWith($('script#verificationTpl').html());
+        },
+
+        removeVerifyTrue: function(event) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
             this.model.remove();
+        },
+
+        removeVerifyFalse: function(event) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            this.render();
         },
 
         render: function() {
@@ -48,9 +79,10 @@ $(function() {
             this.ideas = new IdeaCollection();
 
             this.ideas.bind('reset', this.render, this);
-            this.ideas.fetch({success: function() {
-                console.log(app.ideaList.ideas.models)
-             }});
+            this.ideas.bind('add', this.render, this);
+            this.ideas.bind('change', this.render, this);
+            this.ideas.bind('remove', this.render, this);
+            this.ideas.fetch();
         },
 
 
@@ -60,7 +92,11 @@ $(function() {
         },
 
         addNew: function(idea) {
-            this.ideas.create(idea, {success: function(post){ console.log(post.toJSON()); }});
+            var self = this;
+            this.ideas.create(idea, {wait: true, success: function(model, response){
+                console.log(response);
+                console.log(model);
+            }});
             return this;
         },
 
@@ -76,7 +112,8 @@ $(function() {
         el: '#app',
 
         events: {
-            "click #ideaForm :submit": "handleSubmit",
+            "click #ideaForm button": "handleSubmit",
+            "keypress #ideaForm": "handleSubmitOnEnter",
         },
 
         handleSubmit: function(event) {
@@ -91,6 +128,12 @@ $(function() {
             this.ideaList.addNew(ideaData);
 
             return this;
+        },
+
+        handleSubmitOnEnter: function(event) {
+            if (event.keyCode == 13) {
+                return this.handleSubmit(event);
+            }
         },
 
         initialize: function() {

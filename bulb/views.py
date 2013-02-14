@@ -5,9 +5,12 @@ import requests, json
 
 N4J = "http://localhost:7474/db/data/cypher"
 
-def n4j2bulb(r):
+def n4j2bulb(r, single=False):
     # JSON to Python dict
     j = r.json()
+
+    if single:
+        assert(len(j['data']) == 1)
     
     # Returned list
     output = []
@@ -19,7 +22,10 @@ def n4j2bulb(r):
             d[c] = datapoint[i]
         output.append(d)
 
-    return output
+    if single:
+        return output[0]
+    else:
+        return output
 
 
 class IdeaAPIView(APIView):
@@ -55,14 +61,14 @@ class IdeaCollectionAPIView(APIView):
     return Response(n4j2bulb(r))
 
   def post(self, request, format=None):
-    query = "create (n {title: {title}}) return ID(n) as id;"
+    query = "create (n {title: {title}}) return ID(n) as id, n.title as title;"
     params = {"title": request.DATA['title']}
 
     headers = {'content-type': 'application/json'}
 
     r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
 
-    return Response(n4j2bulb(r))
+    return Response(n4j2bulb(r, True)) # True because we need one single JSON object, not a list
 
 class NeighbourAPIView(APIView):
   def get(self, request, ideaId=None, format=None):
