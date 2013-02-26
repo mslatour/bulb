@@ -13,6 +13,8 @@
         <!-- -JS- -->
         <!-- JQuery -->
         <script src="{% static 'js/jquery.js' %}"></script>
+        <!-- JQuery UI -->
+        <script src="{% static 'js/jquery-ui.js' %}"></script>
         <!-- Bootstrap -->
         <script src="{% static 'js/bootstrap.min.js' %}"></script>
         <!-- Underscore -->
@@ -36,7 +38,7 @@
         </div>
     </div>
     <script id="ideaRowTpl" type="text/template">
-<td class="span1"><%= id %></td><td class="span8"><%= title %></td><td class="buttons span3"><button type="button" id="id_delete" class="btn btn-danger"><i class="icon-trash icon-white"></i> Delete</button>
+<td class="span1 idea-id"><%= id %></td><td class="span5"><%= title %></td><td class="span3"><span class="linked"></span></td><td class="buttons span3"><button type="button" id="id_delete" class="btn btn-danger"><i class="icon-trash icon-white"></i> Delete</button>
     </script>
     <script id="verificationTpl" type="text/template">
 Are you sure? <div class="verify btn-group"><button class="btn btn-danger yes">Yes</button><button class="btn no">No</button></div>
