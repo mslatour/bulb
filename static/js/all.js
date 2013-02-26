@@ -193,8 +193,15 @@ $(function() {
         el: '#app',
 
         events: {
-            "click #ideaForm button": "handleSubmit",
+            "click #ideaForm button#addButton": "handleSubmit",
+            "click #loginForm button#loginButton": "handleLogin",
             "keypress #ideaForm": "handleSubmitOnEnter",
+        },
+
+        handleLogin: function(event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          alert("Login pressed!");
         },
 
         handleSubmit: function(event) {
