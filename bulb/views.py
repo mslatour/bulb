@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import authentication
+from rest_framework import permissions
 from django.shortcuts import render
 import requests, json
 
@@ -29,6 +31,7 @@ def n4j2bulb(r, single=False):
 
 
 class IdeaAPIView(APIView):
+  permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
   
   def get(self, request, ideaId=0, format=None):
     query = "start x=node({ideaId}) return ID(x) as id, x.title as title"
@@ -61,6 +64,7 @@ class IdeaCollectionAPIView(APIView):
     return Response(n4j2bulb(r))
 
   def post(self, request, format=None):
+    # create idea
     query = "create (n {title: {title}}) return ID(n) as id, n.title as title;"
     params = {"title": request.DATA['title']}
 
