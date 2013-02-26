@@ -1,0 +1,2 @@
+Query the first 100 articles on Mathematics and convert the output to JSON:
+curl -s "http://api.springer.com/metadata/pam?q=subject:Mathematics&p=100&api_key=hncn9z4n4afns8e5n7uvgvge" | ./pam2json.sh > springer.json
