@@ -42,7 +42,7 @@ class IdeaAPIView(APIView):
 
   def delete(self, request, ideaId=None, format=None):
     if ideaId:
-      query = "start n=node({ideaId}) delete n;"
+      query = "start n=node({ideaId}) match n-[r]-() delete r delete n;"
       params = {"ideaId": int(ideaId)}
 
       headers = {'content-type': 'application/json'}
