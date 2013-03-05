@@ -86,3 +86,15 @@ class N4JBackend(authentication.BasicAuthentication):
 
   def authenticate_header(self, request):
       return 'N4JBasic realm="%s"' % self.www_authenticate_realm
+
+class IsOwnerOrReadOnly(permissions.BasePermission):
+  
+  def has_permission(self, request, view, obj=None):
+    if request.method in permissions.SAFE_METHODS:
+      return True
+
+    if obj:
+      print obj
+      return obj[0]['owner'] == request.user.username
+    else:
+      return True
