@@ -85,7 +85,11 @@ class IdeaCollectionAPIView(APIView):
             "create ideaRoot-[:IDEA]->idea "
             "create user-[:OWNS]->idea "
             "return ID(idea) as id, idea.title as title;")
-    params = {"title": request.DATA['title'], "username": request.user.username}
+
+    if 'abstract' in request.DATA.keys():
+      params = {"title": request.DATA['title'], "abstract": request.DATA['abstract'], "username": request.user.username}
+    else:
+      params = {"title": request.DATA['title'], "username": request.user.username}
 
     headers = {'content-type': 'application/json'}
 
