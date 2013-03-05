@@ -4,6 +4,10 @@
   margin-right: -3px;
 }*/
 
+body {
+    padding-top: 50px;
+}
+
 #app {
     text-align: center;
 }
@@ -14,4 +18,16 @@
 
 .table td.buttons {
     text-align:right;
+}
+
+#loginModal .error {
+  display: none;
+}
+
+.logged-in {
+  display: none;
+}
+
+.logged-in .user {
+  color: #DD0000;
 }

@@ -2,10 +2,13 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import permissions
 from rest_framework import authentication
+from rest_framework import exceptions
 import requests
 import hashlib
 import json
 import logging
+import base64
+from django.utils.encoding import smart_unicode, DjangoUnicodeDecodeError
 
 logger = logging.getLogger(__name__)
 
@@ -33,44 +36,53 @@ def n4j2bulb(r, single=False):
     else:
         return output
 
-class N4JBackend(authentication.BaseAuthentication):
+class N4JBackend(authentication.BasicAuthentication):
   """
-  Authenticate user based on data from Neo4J
+  HTTP Basic authentication against user based on data from Neo4J
   """
 
   def authenticate(self, request):
-    username = request.META.get('HTTP_X_USERNAME')
-    password = request.META.get('HTTP_X_PASSWORD')
+    """
+    Returns a `User` if a correct username and password have been supplied
+    using HTTP Basic authentication.  Otherwise returns `None`.
+    """
+    auth = request.META.get('HTTP_AUTHORIZATION', '').split()
 
-    if (username and password):
-      query = "start user=node:users(username={username}) return user.pass as pass"
-      params = {"username": username}
-      headers = {'content-type': 'application/json'}
+    if not auth or auth[0].lower() != "n4jbasic":
+        return None
 
-      r = n4j2bulb(requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers), True)
-#
-      if (r['pass'] == password):
-        # User found and right password given
-        user = User(username=username, password='')
-        return (user, None)
+    if len(auth) != 2:
+        raise exceptions.AuthenticationFailed('Invalid N4JBasic header')
 
+    try:
+        auth_parts = base64.b64decode(auth[1]).partition(':')
+    except TypeError:
+        raise exceptions.AuthenticationFailed('Invalid N4JBasic header')
 
-   # User not found
-    return None
+    try:
+        userid = smart_unicode(auth_parts[0])
+        password = smart_unicode(auth_parts[2])
+    except DjangoUnicodeDecodeError:
+        raise exceptions.AuthenticationFailed('Invalid N4JBasic header')
 
-# def authenticate(self, username=None, password=None):
-#   if password:
-#     sha1hash = hashlib.sha224(password).hexdigest()
-#   
-#
-# def get_user(self, user_id):
-#   query = "start user=node:users(id={id}) return user.username as username"
-#   params = {"id": user_id}
-#   headers = {'content-type': 'application/json'}
-#
-#   r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
-#
-#   if (len(r.json()['data']) != 0):
-#     return User(username=n4j2bulb(r, True)['username'])
-#
-#   return None
+    return self.authenticate_credentials(userid, password)
+
+  def authenticate_credentials(self, userid, password):
+    shaHTTP = hashlib.sha224(password).hexdigest()
+    
+    query = "start user=node:users(username={username}) return user.password as password"
+    params = {"username": userid}
+    headers = {'content-type': 'application/json'}
+
+    r = n4j2bulb(requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers), True)
+
+    if (r['password'] == shaHTTP):
+      # User found and right password given
+      user = User(username=userid, password='')
+      return (user, None)
+
+     # User not found
+    raise exceptions.AuthenticationFailed('Invalid username/password')
+
+  def authenticate_header(self, request):
+      return 'N4JBasic realm="%s"' % self.www_authenticate_realm

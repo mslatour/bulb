@@ -1,3 +1,4 @@
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import authentication
@@ -29,12 +30,21 @@ def n4j2bulb(r, single=False):
     else:
         return output
 
+@api_view(['GET'])
+def loginStatus(request):
+  print request.user
+  if request.user and request.user.is_authenticated():
+    return Response({'logged_in': True})
+  else:
+    return Response({'logged_in': False})
 
 class IdeaAPIView(APIView):
   permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
   
   def get(self, request, ideaId=0, format=None):
-    query = "start x=node({ideaId}) return ID(x) as id, x.title as title"
+    query = ("start x=node({ideaId}) "
+            "match x<-[:OWNS]-user "
+            "return ID(x) as id, x.title as title, ID(user) as owner")
     params = {"ideaId": int(ideaId)}
     headers = {'content-type': 'application/json'}
 
@@ -55,8 +65,12 @@ class IdeaAPIView(APIView):
       return Response(r.json())
 
 class IdeaCollectionAPIView(APIView):
+  permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
   def get(self, request, format=None):
-    query = "start x=node(*) where ID(x) <> 0 return ID(x) as id, x.title as title"
+    query = ("start ideaRoot=node:roots(root='idea') "
+             "match ideaRoot-[:IDEA]->idea "
+             "return ID(idea) as id, idea.title as title")#, user.username as owner")
     headers = {'content-type': 'application/json'}
 
     r = requests.post(N4J, data=json.dumps({"query": query}), headers=headers)
@@ -65,8 +79,13 @@ class IdeaCollectionAPIView(APIView):
 
   def post(self, request, format=None):
     # create idea
-    query = "create (n {title: {title}}) return ID(n) as id, n.title as title;"
-    params = {"title": request.DATA['title']}
+    query = ("start ideaRoot=node:roots(root='idea'), "
+            "user=node:users(username={username}) "
+            "create (idea {title: {title}}) "
+            "create ideaRoot-[:IDEA]->idea "
+            "create user-[:OWNS]->idea "
+            "return ID(idea) as id, idea.title as title;")
+    params = {"title": request.DATA['title'], "username": request.user.username}
 
     headers = {'content-type': 'application/json'}
 

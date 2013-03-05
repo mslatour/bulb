@@ -8,11 +8,11 @@ $(function() {
             };
         },
 
-        // add trailing slash to request url
-        // necessary for Django as Backbone does not add trailing slash
         url: function() {
             var origUrl = Backbone.Model.prototype.url.call(this);
 
+            // add trailing slash to request url
+            // necessary for Django as Backbone does not add trailing slash
             if (origUrl.substr(origUrl.length - 1) !== "/")
                 origUrl += '/';
                 
@@ -21,13 +21,12 @@ $(function() {
 
 
         remove: function() {
-            this.destroy();
+            // wait: true makes sure Backbone waits for a response from the servere
+            // before actually removing the model from the collection
+            this.destroy({wait: true});
         },
 
         initialize: function() {
-            if (!this.get("title")) {
-                this.set({"title": this.defaults().title});
-            }
             this.selected = false;
         },
 
@@ -142,7 +141,13 @@ $(function() {
                 $(this.el).addClass('warning');
 
             return this;
-        }   
+        },
+        
+        initialize: function() {
+            this.model.bind('error', function(a, b, c) {
+                console.log(a, b, c);
+            }, this);
+        },
 
     });
 
@@ -194,14 +199,46 @@ $(function() {
 
         events: {
             "click #ideaForm button#addButton": "handleSubmit",
-            "click #loginForm button#loginButton": "handleLogin",
+            "click #loginModal button#loginButton": "handleLogin",
+            "click a#logoutButton": "handleLogout",
             "keypress #ideaForm": "handleSubmitOnEnter",
         },
 
         handleLogin: function(event) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          alert("Login pressed!");
+          username = $('#loginModal #id_user').val();
+          password = $('#loginModal #id_pass').val();
+
+          Backbone.BasicAuth.set(username, password);
+
+          r = $.ajax({
+              url: 'loginStatus/',
+              type: 'GET',
+              dataType: 'json',
+              success: function(result) {
+                  if (waitingRequest) {
+                    $.ajax(waitingRequest);
+                    waitingRequest = null;
+                  }
+                  $('#loginModal').modal('hide');
+                  $('.logged-out').hide();
+                  $('.logged-in .user .username').html(username);
+                  $('.logged-in').show();
+              },
+              error: function(result) {
+                  $('#loginModal .error').show();
+              }
+          });
+        },
+
+        handleLogout: function(event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            Backbone.BasicAuth.clear();
+            $('.logged-in .user .username').html('');
+            $('.logged-in').hide();
+            $('.logged-out').show();
         },
 
         handleSubmit: function(event) {
@@ -226,6 +263,7 @@ $(function() {
 
         initialize: function() {
             this.ideaList = new IdeaListView();
+            this.loggedIn = false;
         },
 
         render: function() {
@@ -235,6 +273,18 @@ $(function() {
 
     var app = new AppView();
     app.render();
+
+    waitingRequest = null;
+
+    $.ajaxSetup({
+        statusCode: {
+            401: function(elm, xhr, s) {
+                waitingRequest = this;
+                $('#loginModal').modal('show');
+            }
+        }
+    });
+
 
     /* */
 

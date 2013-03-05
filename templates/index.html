@@ -16,34 +16,50 @@
         <!-- JQuery UI -->
         <script src="{% static 'js/jquery-ui.js' %}"></script>
         <!-- Bootstrap -->
-        <script src="{% static 'js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'js/bootstrap.js' %}"></script>
         <!-- Underscore -->
         <script src="{% static 'js/underscore.js' %}"></script>
         <!-- Backbone -->
         <script src="{% static 'js/backbone.js' %}"></script>
+        <!-- Backbone Auth -->
+        <script src="{% static 'js/backbone.auth.js' %}"></script>
         <!-- Main script -->
         <script src="{% static 'js/all.js' %}"></script>
     </head>
     <body>
+    <div id="app">
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Project Bulb</a>
+          <ul class="nav pull-right">
+            <li class="logged-in dropdown">
+              <a href="#" class="user dropdown-toggle" data-toggle="dropdown"><span class="username"></span><b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="#" role="menuitem" id="logoutButton">Logout</a></li>
+              </ul>
+            </li>
+            <li class="logged-out"><a href="#loginModal" data-toggle="modal">Login</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
     <div class="container">
-        <div id="app">
+      <div class="row">
         <table class="table table-striped">
         </table>
         <form method="post" id="ideaForm">
             <div class="input-append">
                 <input class="span8" type="text" id="id_title" />
                 <button type="button" class="btn" id="addButton">Add idea</button>
-                <a href="#loginModal" role="button" class="btn" data-toggle="modal">Login</a>
             </div>
         </form>
-        </div>
-    </div>
-
     <div id="loginModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelled-by="myLoginLabel" aria-hidden="true">
       <div class="modal-header">
         <h3>Login</h3>
       </div>
       <div class="modal-body">
+        <p class="text-error error">Username and/or password incorrect.</p>
         <form class="form-horizontal" method="post" id="loginForm">
           <div class="control-group">
             <label class="control-label" for="id_user">Username</label>
@@ -64,6 +80,10 @@
         <button class="btn btn-primary" id="loginButton">Login</button>
       </div>
     </div>
+        </div>
+    </div>
+    </div>
+
     <script id="ideaRowTpl" type="text/template">
 <td class="span1 idea-id"><%= id %></td><td class="span5"><%= title %></td><td class="span3"><span class="linked"></span></td><td class="buttons span3"><button type="button" id="id_delete" class="btn btn-danger"><i class="icon-trash icon-white"></i> Delete</button>
     </script>
