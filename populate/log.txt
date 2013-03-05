@@ -1,0 +1,2 @@
+curl "http://api.springer.com/metadata/pam?q=subject:Mathematics&p=100&api_key=hncn9z4n4afns8e5n7uvgvge" | ./pam2json.sh | sed 's/.*/..\/..\/bulbtty\/bulb.sh create "&"/g' > springer.bulb
+cat springer.bulb | sed 's/\\//g;s/"/\\"/g;s/\(.*\) create \(.*\)$/data="\2"; \1 create "\$data"/g' | tail -n 1 | bash
