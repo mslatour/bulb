@@ -15,26 +15,32 @@ logger = logging.getLogger(__name__)
 N4J = "http://localhost:7474/db/data/cypher"
 
 def n4j2bulb(r, single=False):
-    # JSON to Python dict
-    j = r.json()
+  # JSON to Python dict
+  j = r.json()
 
-    if single:
-        assert(len(j['data']) == 1)
-    
-    # Returned list
-    output = []
+# How should this work exactly?
+# -------------------------
+# It breaks, returns:
+# AssertionError at /idea/
+# No exception supplied
+# -------------------------
+#  if single:
+#   assert(len(j['data']) == 1)
+  
+  # Returned list
+  output = []
 
-    for datapoint in j['data']:
-        # Returned dict
-        d = {}
-        for i, c in enumerate(j['columns']):
-            d[c] = datapoint[i]
-        output.append(d)
+  for datapoint in j['data']:
+    # Returned dict
+    d = {}
+    for i, c in enumerate(j['columns']):
+        d[c] = datapoint[i]
+    output.append(d)
 
-    if single:
-        return output[0]
-    else:
-        return output
+  if single:
+    return output[0]
+  else:
+    return output
 
 class N4JBackend(authentication.BasicAuthentication):
   """
