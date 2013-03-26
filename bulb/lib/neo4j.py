@@ -210,4 +210,7 @@ class N4JResponse:
         if self.is_error():
             return {"error": self.error_message()}
         else:
-            return dict(zip(self.columns, self.data))
+            output = []
+            for datapoint in self.data:
+                output.append(dict(zip(self.columns, datapoint)))
+            return output
