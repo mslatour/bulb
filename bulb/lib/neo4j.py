@@ -32,7 +32,7 @@ class N4J:
         r = requests.post(cypher_url, data=json.dumps({"query": query,
                            "params": params}), auth=self.auth,
                            headers=headers)
-        return r
+        return N4JResponse(r)
 
     def _is_idea(self, id):
         """
@@ -45,7 +45,7 @@ class N4J:
                  "return count(*)".format(id))
         r = self._cypher(query)
 
-        if (r.status_code == 400): # node not found
+        if (r.is_error()): # node not found
             return False
 
         if (r.json()['data'][0][0] > 0):
@@ -61,13 +61,36 @@ class N4J:
         r = self._cypher("START u=node:users(username='{0}') RETURN ID(u)".\
                      format(username))
         # If user is found, return True
-        if (len(r.json()['data']) > 0):
+        if (len(r.raw.json()['data']) > 0):
             # r.json()['data'] is list of results
             # r.json()['data'][0] is first result
             # r.json()['data'][0][0] is first field of first result
-            return r.json()['data'][0][0]
+            return r.raw.json()['data'][0][0]
         else:
             return False
+
+    def get_idea(self, id):
+        """
+        Returns properties of id
+        """
+        if (self._is_idea(id)):
+            query = ("start idea=node({0}) "
+                     "match x<-[:OWNS]-user "
+                     "return ID(x) as id, x.title as title, "
+                     "user.username as owner").format(id)
+            r = self._cypher(query)
+            return r
+
+    def get_all_ideas(self):
+        """
+        Returns all ideas in the system.
+        Will be removed in the future because of excessive memory use.
+        """
+        query = ("start ideaRoot=node:roots(root='idea') "
+                 "match ideaRoot-[:IDEA]->idea "
+                 "return ID(idea) as id, idea.title as title")
+        r = self._cypher(query)
+        return r
 
     def add_idea(self, owner, title, properties={}):
         """
@@ -94,6 +117,7 @@ class N4J:
                      .format(ownerID, propertiesAsString))
 
             r = self._cypher(query)
+            return r
         else:
             raise ValueError('owner does not exist')
 
@@ -121,6 +145,7 @@ class N4J:
                      "delete r "
                      "delete idea").format(id)
             r = self._cypher(query)
+            return r
         else:
             raise ValueError('node {0} either does not exist or is not an idea'.format(id))
        

@@ -100,7 +100,6 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
       return True
 
     if obj:
-      print obj
       return obj[0]['owner'] == request.user.username
     else:
       return True
