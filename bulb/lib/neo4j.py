@@ -1,4 +1,4 @@
-import requests, simplejson
+import requests
 
 class N4J:
     def __init__(self, url, auth=None):
@@ -18,7 +18,7 @@ class N4JResponse:
         """
         # check if raw is a requests.Response object
         if not isinstance(raw, requests.Response):
-            raise TypeError
+            raise TypeError("A valid requests.Response object should be provided")
 
         # Store raw response
         self.raw = raw
@@ -28,12 +28,12 @@ class N4JResponse:
             try:
                 # Attempt to decode JSON
                 self.content = raw.json()
-            except (TypeError, ValueError, simplejson.JSONDecodeError):
+            except (TypeError, ValueError):
                 # Fallback, store text
-                self.content = raw.text()
+                self.content = raw.text
         else:
                 # If not json, then just store the plain text
-                self.content = raw.text()
+                self.content = raw.text
     
     def is_error(self):
         return self.raw.status_code != 200
