@@ -152,8 +152,11 @@ class N4J:
 class N4JResponse:
     """ Response object for N4J queries.
     
-    :param raw: raw requests.Response object
-    :param content: either raw.json() or raw.text()
+    :param raw: Raw requests.Response object
+    :param status_code: HTTP status code
+    :param reason: HTTP reason
+    :param columns: Columns from neo4j result, if no error occured
+    :param data: Data from neo4j result, if no error occured
     """
 
     def __init__(self, raw):
@@ -162,25 +165,46 @@ class N4JResponse:
         """
         # check if raw is a requests.Response object
         if not isinstance(raw, requests.Response):
-            raise TypeError
+            raise TypeError("A valid requests.Response object should be provided")
 
         # Store raw response
         self.raw = raw
+        # Store status code and reason
+        self.status_code = raw.status_code
+        self.reason = raw.reason
            
-        # If content appears to be json
-        if self.has_content_type("application/json"):
-            try:
-                # Attempt to decode JSON
-                self.content = raw.json()
-            except (TypeError, ValueError, simplejson.JSONDecodeError):
-                # Fallback, store text
-                self.content = raw.text()
-        else:
-                # If not json, then just store the plain text
-                self.content = raw.text()
-    
+        if not self.is_error():
+            # raw needs to contain a JSON encoded message
+            if self.has_content_type("application/json"):
+                try:
+                    content = raw.json()
+                except (TypeError, ValueError) as e:
+                    raise ValueError("Invalid JSON provided ({0}):{1}".format(\
+                            e.errno, e.strerror))
+                else:
+                    if "columns" in content and "data" in content:
+                        self.columns = content["columns"]
+                        self.data = content["data"]
+                    else:
+                        raise ValueError("JSON object should contain \
+                                `columns' and `data' fields")
+            else:
+                raise ValueError("Only JSON requests are supported.")
+
     def is_error(self):
-        return self.raw.status_code != 200
+        return self.status_code != 200
+
+    def error_message(self):
+        # If no error occured
+        if not self.is_error():
+            return ""
+        
+        # If N4J JSON Error
+        try:
+            error = self.raw.json()
+            return error["message"]
+        except:
+            return self.reason
 
     def content_type(self):
         """ Returns the content-type that was set in the HTTP headers. """
@@ -192,10 +216,13 @@ class N4JResponse:
         """
         return self.content_type().find(content_type) > -1
 
+    def count(self):
+        return len(self.data)
+
     def bulb(self):
         """ Converts N4J content to bulb format using the following rules:
-         1) IF is_error() RETURN { "error": "Error message"}
-         2) ELIF content is well-formed RETURN zipped result:
+         IF is_error() RETURN { "error": "Error message"}
+         ELSE:
             Example:
             { data: [ "value1", "value2" ], columns: [ "col1", "col2" ] }
 
@@ -203,17 +230,12 @@ class N4JResponse:
             { "col1" : "value1", "col2" : "value2" }
             
             Implemented using dict(zip(["col1","col2"],["value1","value2"])).
-         3) ELSE RETURN { "result": content }
         """
         # if content was an json error message
-        if self.is_error() and \
-                isinstance(self.content, dict) and \
-                "message" in self.content:
-            return {"error": self.content["message"]}
-        # if content is well-formed 
-        elif isinstance(self.content, dict) and \
-                "columns" in self.content and \
-                "data" in self.content:
-            return dict(zip(self.content["columns"], self.content["data"]))
+        if self.is_error():
+            return {"error": self.error_message()}
         else:
-            return { "result" : self.content }
+            output = []
+            for datapoint in self.data:
+                output.append(dict(zip(self.columns, datapoint)))
+            return output
