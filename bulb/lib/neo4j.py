@@ -48,7 +48,7 @@ class N4J:
         if (r.is_error()): # node not found
             return False
 
-        if (r.json()['data'][0][0] > 0):
+        if (r.raw.json()['data'][0][0] > 0):
             return True
         else:
             return False
@@ -75,8 +75,8 @@ class N4J:
         """
         if (self._is_idea(id)):
             query = ("start idea=node({0}) "
-                     "match x<-[:OWNS]-user "
-                     "return ID(x) as id, x.title as title, "
+                     "match idea<-[:OWNS]-user "
+                     "return ID(idea) as id, idea.title as title, "
                      "user.username as owner").format(id)
             r = self._cypher(query)
             return r
