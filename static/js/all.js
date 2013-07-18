@@ -1,3 +1,9 @@
+function updateUserStatus(username) {
+  $('.logged-out').hide();
+  $('.logged-in .user .username').html(username);
+  $('.logged-in').show();
+}
+
 $(function() {
 
     var Idea = Backbone.Model.extend({
@@ -20,10 +26,15 @@ $(function() {
         },
 
 
-        remove: function() {
+        remove: function(event) {
             // wait: true makes sure Backbone waits for a response from the servere
             // before actually removing the model from the collection
-            this.destroy({wait: true});
+            this.destroy({
+                wait: true,
+                error: function(result) {
+                    $(event.currentTarget).closest('tr').find('td .linked').html('<strong>No permission to delete</strong>');
+                    }
+                });
         },
 
         initialize: function() {
@@ -55,7 +66,7 @@ $(function() {
         removeVerifyTrue: function(event) {
             event.stopImmediatePropagation();
             event.preventDefault();
-            this.model.remove();
+            this.model.remove(event);
         },
 
         removeVerifyFalse: function(event) {
@@ -204,6 +215,11 @@ $(function() {
             "keypress #ideaForm": "handleSubmitOnEnter",
         },
 
+        updateUserStatus: function (username) {
+          $('.logged-out').hide();
+          $('.logged-in .user .username').html(username);
+          $('.logged-in').show();
+        },
         handleLogin: function(event) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -222,9 +238,7 @@ $(function() {
                     waitingRequest = null;
                   }
                   $('#loginModal').modal('hide');
-                  $('.logged-out').hide();
-                  $('.logged-in .user .username').html(username);
-                  $('.logged-in').show();
+                  updateUserStatus(username);
               },
               error: function(result) {
                   $('#loginModal .error').show();
@@ -236,6 +250,10 @@ $(function() {
             event.preventDefault();
             event.stopImmediatePropagation();
             Backbone.BasicAuth.clear();
+            $.ajax( {
+                url: 'logout/',
+                type: 'POST',
+            });
             $('.logged-in .user .username').html('');
             $('.logged-in').hide();
             $('.logged-out').show();
@@ -285,6 +303,10 @@ $(function() {
         }
     });
 
+    $(document).ajaxSend(function(e, xhr, options) {
+        var token = $.cookie('csrftoken');
+        xhr.setRequestHeader('X-CSRFToken', token);
+    });
 
     /* */
 

@@ -13,12 +13,16 @@ N4J = neo4j.N4J("http://localhost:7474")
 @api_view(['GET'])
 @permission_classes((permissions.IsAuthenticated,))
 def loginStatus(request):
-    if request.user and request.user.is_authenticated():
-        return Response({'logged_in': True})
-    else:
-        return Response({'logged_in': False})
+    return Response({'username': request.user.username})
+    #if request.user and request.user.is_authenticated():
+    #    return Response({'logged_in': True})
+    #else:
+    #    return Response({'logged_in': False})
 
 class IdeaAPIView(APIView):
+    """
+    API class for getting and deleting a particular idea
+    """
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, auth.IsOwnerOrReadOnly,)
 
     def get_object(self, ideaId):
@@ -37,8 +41,8 @@ class IdeaAPIView(APIView):
 
     def delete(self, request, ideaId=None, format=None):
         if ideaId:
-            get_object(ideaId) # see if we have permission
-            return N4J.delete_idea(ideaId).bulb()
+            self.get_object(ideaId) # see if we have permission
+            return Response(N4J.delete_idea(ideaId).bulb())
 
 class IdeaGraphAPIView(APIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -57,6 +61,9 @@ class IdeaGraphAPIView(APIView):
         return Response(N4J.add_idea(request.user.username, title, properties).bulb())
 
 class IdeaCollectionAPIView(APIView):
+    """
+    API class for collection of ideas and creating new instances of ideas
+    """
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get(self, request, format=None):
@@ -71,30 +78,31 @@ class IdeaCollectionAPIView(APIView):
         return Response(N4J.add_idea(request.user.username, title, properties).bulb())
 
 class NeighbourAPIView(APIView):
+    """
+    API class for getting and creating neighbours of ideas
+    """
     def get(self, request, ideaId=None, format=None):
         if ideaId:
             query = "start n=node({ideaId}) match n-[:IS_RELATED_TO]-m return ID(m) as id, m.title as title;"
             params = {"ideaId": int(ideaId)}
 
-            headers = {'content-type': 'application/json'}
-
-            r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
-
-            return Response(n4j2bulb(r))
+            return Response(N4J._cypher(query, params).bulb())
 
     def post(self, request, ideaId=None, format=None):
         if ideaId:
             query = "start node1=node({ideaId}), node2=node({neighbourId}) create node1-[:IS_RELATED_TO]->node2;"
             params = {"ideaId": int(ideaId), "neighbourId": int(request.DATA['neighbour'])}
-
-            headers = {'content-type': 'application/json'}
-
-            r = requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers)
-
-            return Response(r.json())
+            return Response(N4J._cypher(query, params).bulb())
 
 def network(request):
     return render(request, 'network.html')
 
 def interface(request):
-    return render(request, 'index.html')
+    username = request.session.get('user')
+    c = {'username': username}
+    return render(request, 'index.html', c)
+
+@api_view(['POST'])
+def logout(request):
+    request.session.flush()
+    return Response({'logged_in': False})
