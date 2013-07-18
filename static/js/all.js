@@ -164,7 +164,7 @@ $(function() {
 
     var IdeaCollection = Backbone.Collection.extend({
         model: Idea,
-        url: 'http://localhost:8000/idea/',
+        url: '/idea/',
 
     });
 
