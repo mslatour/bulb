@@ -7,8 +7,12 @@ from django.shortcuts import render
 from lib import neo4j
 import auth
 import requests, json
+import os
 
-N4J = neo4j.N4J("http://localhost:7474")
+if 'NEO4J_URL' in os.environ.keys():
+    N4J = neo4j.N4J(os.environ['NEO4J_URL']);
+else:
+    N4J = neo4j.N4J("http://localhost:7474")
 
 @api_view(['GET'])
 @permission_classes((permissions.IsAuthenticated,))
