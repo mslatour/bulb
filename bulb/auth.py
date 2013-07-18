@@ -13,7 +13,10 @@ from django.utils.encoding import smart_unicode, DjangoUnicodeDecodeError
 
 logger = logging.getLogger(__name__)
 
-N4J = "http://localhost:7474/db/data/cypher"
+if 'NEO4J_URL' in os.environ.keys():
+    N4J = os.environ['NEO4J_URL']+"/db/data/cypher"
+else:
+    N4J = "http://localhost:7474/db/data/cypher"
 
 def n4j2bulb(r, single=False):
   # JSON to Python dict
