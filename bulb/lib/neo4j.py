@@ -92,6 +92,17 @@ class N4J:
         r = self._cypher(query)
         return r
 
+    def get_all_connections(self):
+        """
+        Returns all connections in the system.
+        Will be removed in the future because of excessive memory use.
+        """
+        query = ("start n1=node(*),n2=node(*) "
+                "match (n1)-[:IS_RELATED_TO]->(n2) "
+                 "return ID(n1) as source, ID(n2) as target")
+        r = self._cypher(query)
+        return r
+
     def add_idea(self, owner, title, properties={}):
         """
         Adds idea to the Neo4J database and links it to the given owner.

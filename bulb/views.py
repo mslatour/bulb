@@ -40,6 +40,22 @@ class IdeaAPIView(APIView):
             get_object(ideaId) # see if we have permission
             return N4J.delete_idea(ideaId).bulb()
 
+class IdeaGraphAPIView(APIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get(self, request, format=None):
+        ideas = N4J.get_all_ideas().bulb()
+        connections = N4J.get_all_connections().bulb()
+        return Response({"nodes":ideas, "links":connections})
+
+    def post(self, request, format=None):
+        # create idea
+        title = request.DATA['title']
+        properties = request.DATA
+        del(properties['title'])
+
+        return Response(N4J.add_idea(request.user.username, title, properties).bulb())
+
 class IdeaCollectionAPIView(APIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
@@ -77,6 +93,8 @@ class NeighbourAPIView(APIView):
 
             return Response(r.json())
 
+def network(request):
+    return render(request, 'network.html')
 
 def interface(request):
     return render(request, 'index.html')

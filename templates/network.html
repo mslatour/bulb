@@ -1,0 +1,161 @@
+{% load staticfiles %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <title>Project Bulb - interface</title>
+        <!-- -CSS- -->
+        <!-- Bootstrap -->
+        <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+        <!-- Main CSS -->
+        <link href="{% static 'css/all.css' %}" rel="stylesheet" media="screen">
+
+        <!-- -JS- -->
+        <!-- JQuery -->
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <!-- JQuery UI -->
+        <script src="{% static 'js/jquery-ui.js' %}"></script>
+        <!-- Bootstrap -->
+        <script src="{% static 'js/bootstrap.js' %}"></script>
+        <!-- Underscore -->
+        <script src="{% static 'js/underscore.js' %}"></script>
+        <!-- Backbone -->
+        <script src="{% static 'js/backbone.js' %}"></script>
+        <!-- Backbone Auth -->
+        <script src="{% static 'js/backbone.basicauth.js' %}"></script>
+        <!-- Main script -->
+		<script src="{% static 'js/all.js' %}"></script>
+		<!-- D3js -->
+		<script src="http://d3js.org/d3.v3.min.js"></script>
+    </head>
+    <body>
+	<style>
+
+	.node {
+	  stroke: #fff;
+	  stroke-width: 1.5px;
+	}
+
+	.link {
+	  stroke: #999;
+	  stroke-opacity: .6;
+	}
+
+	</style>
+	<script>
+	function dereference(graph){
+		var mapping = {};
+		for(var i = 0; i < graph.nodes.length; i++ ){
+			mapping[graph.nodes[i].id] = i;
+		}
+		for(var i = 0; i < graph.links.length; i++ ){
+			graph.links[i].source = mapping[graph.links[i].source];
+			graph.links[i].target = mapping[graph.links[i].target];
+		}
+	}
+
+	var width = 960,
+		height = 500;
+
+	var color = d3.scale.category20();
+
+	var force = d3.layout.force()
+		.charge(-120)
+		.linkDistance(30)
+		.size([width, height]);
+
+	var svg = d3.select("body").append("svg")
+		.attr("width", width)
+		.attr("height", height);
+
+	d3.json("/idea/graph", function(error, graph) {
+	  dereference(graph);
+	  force
+		  .nodes(graph.nodes)
+		  .links(graph.links)
+		  .start();
+
+	  var link = svg.selectAll(".link")
+		  .data(graph.links)
+		.enter().append("line")
+		  .attr("class", "link")
+		  .style("stroke-width", function(d) { return 2; });
+
+	  var node = svg.selectAll(".node")
+		  .data(graph.nodes)
+		.enter().append("circle")
+		  .attr("class", "node")
+		  .attr("r", 5)
+		  .style("fill", function(d) { return color(1); })
+		  .call(force.drag);
+
+	  node.append("title")
+		  .text(function(d) { return d.title; });
+
+	  force.on("tick", function() {
+		link.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+			.attr("x2", function(d) { return d.target.x; })
+			.attr("y2", function(d) { return d.target.y; });
+
+		node.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; });
+	  });
+	});
+
+	</script>
+    <div id="app">
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Project Bulb</a>
+          <ul class="nav pull-right">
+            <li class="logged-in dropdown">
+              <a href="#" class="user dropdown-toggle" data-toggle="dropdown"><span class="username"></span><b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="#" role="menuitem" id="logoutButton">Logout</a></li>
+              </ul>
+            </li>
+            <li class="logged-out"><a href="#loginModal" data-toggle="modal">Login</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+	<div class="container">
+		<div id="loginModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelled-by="myLoginLabel" aria-hidden="true">
+		  <div class="modal-header">
+			<h3>Login</h3>
+		  </div>
+		  <div class="modal-body">
+			<p class="text-error error">Username and/or password incorrect.</p>
+			<form class="form-horizontal" method="post" id="loginForm">
+			  <div class="control-group">
+				<label class="control-label" for="id_user">Username</label>
+				<div class="controls">
+				  <input type="text" id="id_user" />
+				</div>
+			  </div>
+			  <div class="control-group">
+				<label class="control-label" for="id_pass">Password</label>
+				<div class="controls">
+				  <input type="password" id="id_pass" />
+				</div>
+			  </div>
+			</form>
+		  </div>
+		  <div class="modal-footer">
+			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			<button class="btn btn-primary" id="loginButton">Login</button>
+		  </div>
+		</div>
+    </div>
+    </div>
+
+    <script id="ideaRowTpl" type="text/template">
+<td class="span1 idea-id"><%= id %></td><td class="span5"><%= title %></td><td class="span3"><span class="linked"></span></td><td class="buttons span3"><button type="button" id="id_delete" class="btn btn-danger"><i class="icon-trash icon-white"></i> Delete</button>
+    </script>
+    <script id="verificationTpl" type="text/template">
+Are you sure? <div class="verify btn-group"><button class="btn btn-danger yes">Yes</button><button class="btn no">No</button></div>
+</script>
+    </body>
+</html>
