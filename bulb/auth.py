@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import base64
+import os
 from django.utils.encoding import smart_unicode, DjangoUnicodeDecodeError
 
 logger = logging.getLogger(__name__)
