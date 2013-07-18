@@ -5,6 +5,7 @@ from rest_framework import authentication
 from rest_framework import exceptions
 from rest_framework.compat import CsrfViewMiddleware
 import requests
+import urlparse
 import hashlib
 import json
 import logging
@@ -111,7 +112,12 @@ class N4JBackend(authentication.BasicAuthentication):
     params = {"username": userid}
     headers = {'content-type': 'application/json'}
 
-    r = n4j2bulb(requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers), True)
+    u = urlparse.urlparse(N4J)
+    if u.username is None or u.password is None:
+        r = n4j2bulb(requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers), True)
+    else:
+        r = n4j2bulb(requests.post(N4J, data=json.dumps({"query": query, "params": params}), headers = headers, auth=(u.username,u.password)), True)
+
 
     if (r['password'] == shaHTTP):
       # User found and right password given
