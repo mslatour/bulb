@@ -23,8 +23,19 @@
         <script src="{% static 'js/backbone.js' %}"></script>
         <!-- Backbone Auth -->
         <script src="{% static 'js/backbone.basicauth.js' %}"></script>
+        <!-- Jquery Cookie-->
+        <script src="{% static 'js/jquery.cookie.js' %}"></script>
         <!-- Main script -->
         <script src="{% static 'js/all.js' %}"></script>
+
+        {% if username %}
+        <!-- Inline script for managing session -->
+        <script type="text/javascript">
+            $(function() {
+                updateUserStatus('{{ username }}');
+            });
+        </script>
+        {% endif %}
     </head>
     <body>
     <div id="app">

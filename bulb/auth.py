@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import permissions
 from rest_framework import authentication
 from rest_framework import exceptions
+from rest_framework.compat import CsrfViewMiddleware
 import requests
 import hashlib
 import json
@@ -49,9 +50,30 @@ class N4JBackend(authentication.BasicAuthentication):
 
   def authenticate(self, request):
     """
-    Returns a `User` if a correct username and password have been supplied
-    using HTTP Basic authentication.  Otherwise returns `None`.
+    Returns a `User` if either
+        - a session user is present
+        - a correct username and password have been supplied
+          using HTTP Basic authentication.
+    
+    Otherwise returns `None`.
     """
+
+    sessionUser = request.session.get('user')
+    if sessionUser:
+        http_request = request._request
+        # Enforce CSRF validation for session based authentication.
+        class CSRFCheck(CsrfViewMiddleware):
+            def _reject(self, request, reason):
+                # Return the failure reason instead of an HttpResponse
+                return reason
+
+        reason = CSRFCheck().process_view(http_request, None, (), {})
+
+        if reason:
+            raise exceptions.AuthenticationFailed('CSRF Failed: %s' % reason)
+
+        return (User(username=sessionUser, password=''), None)
+
     auth = request.META.get('HTTP_AUTHORIZATION', '').split()
 
     if not auth or auth[0].lower() != "n4jbasic":
@@ -70,6 +92,11 @@ class N4JBackend(authentication.BasicAuthentication):
         password = smart_unicode(auth_parts[2])
     except DjangoUnicodeDecodeError:
         raise exceptions.AuthenticationFailed('Invalid N4JBasic header')
+
+    user = self.authenticate_credentials(userid, password)
+
+    if user[0]:
+        request.session['user'] = user[0].username
 
     return self.authenticate_credentials(userid, password)
 
@@ -100,6 +127,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
       return True
 
     if obj:
+      print obj[0]['owner']
       return obj[0]['owner'] == request.user.username
     else:
       return True
